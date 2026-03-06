@@ -649,14 +649,21 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _pillInfo(
-                  'Budget: ${widget.preferences.budgetWeekly.toStringAsFixed(0)} RON',
+              GestureDetector(
+                onTap: _showAiReasoningSheet,
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF2F3F8),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: const Color(0xFFE4E8F1)),
+                  ),
+                  child: const Icon(
+                    CupertinoIcons.question,
+                    size: 16,
+                    color: _textMuted,
+                  ),
                 ),
               ),
             ],
@@ -684,20 +691,69 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     );
   }
 
-  Widget _pillInfo(String text) {
+  Future<void> _showAiReasoningSheet() async {
+    final stores = widget.preferences.selectedSupermarkets;
+    final storesText = stores.join(', ');
+    final budgetText = widget.preferences.budgetWeekly.toStringAsFixed(0);
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'How AI chose this list',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: _textDark,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                _sheetInfoPill('Budget: $budgetText RON'),
+                const SizedBox(height: 8),
+                _sheetInfoPill('Period: ${widget.preferences.shoppingDays} days'),
+                const SizedBox(height: 8),
+                _sheetInfoPill('Stores: $storesText'),
+                const SizedBox(height: 14),
+                const Text(
+                  'AI reasoning placeholder: items were selected to stay close to your budget, fit your selected time period, and prioritize practical staples from the selected store(s). As AI planning improves, this section will include more detailed trade-offs, nutrition decisions, and replacement logic.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: _textDark,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _sheetInfoPill(String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: const Color(0xFFF2F3F8),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         text,
-        textAlign: TextAlign.center,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
         style: const TextStyle(
-          fontSize: 14,
+          fontSize: 12,
           fontWeight: FontWeight.w800,
           color: _textMuted,
         ),

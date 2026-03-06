@@ -8,7 +8,7 @@ import 'package:smart_cart/core/candidates/candidate_builder.dart';
 import 'package:smart_cart/core/db/normalized_product_repository.dart';
 import 'package:smart_cart/core/db/product_cache_store.dart';
 import 'package:smart_cart/core/normalization/normalization_debug.dart';
-import 'package:smart_cart/features/carts/carts_screen.dart';
+import 'package:smart_cart/features/auth/login_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -102,7 +102,7 @@ class SmartCartApp extends StatelessWidget {
           child: child ?? const SizedBox.shrink(),
         );
       },
-      home: const CartsScreen(),
+      home: const LoginScreen(),
     );
   }
 }
