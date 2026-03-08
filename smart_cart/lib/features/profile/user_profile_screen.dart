@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:smart_cart/features/carts/carts_screen.dart';
 import 'package:smart_cart/core/user_profile.dart';
 import 'package:smart_cart/core/user_profile_store.dart';
 
@@ -84,46 +85,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     await _store.save(profile);
     if (!mounted) return;
     setState(() => _saving = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        elevation: 0,
-        margin: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-        backgroundColor: Colors.transparent,
-        content: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x14000000),
-                blurRadius: 16,
-                offset: Offset(0, 8),
-              ),
-            ],
-            border: Border.all(color: const Color(0xFFFFE2CF), width: 1),
-          ),
-          child: const Row(
-            children: [
-              Icon(
-                CupertinoIcons.check_mark_circled_solid,
-                color: _accentOrange,
-                size: 18,
-              ),
-              SizedBox(width: 8),
-              Text(
-                'Profile saved',
-                style: TextStyle(
-                  color: _textDark,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const CartsScreen()),
+      (route) => false,
     );
   }
 
@@ -460,26 +424,36 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     controller.dispose();
   }
 
-  Widget _actionBubble({
-    required IconData icon,
-    required VoidCallback? onTap,
-    Widget? child,
-  }) {
-    return Container(
-      width: 68,
-      height: 68,
-      decoration: const BoxDecoration(color: _accentOrange, shape: BoxShape.circle),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: onTap,
-          child: child ??
-              Icon(
-                icon,
-                color: Colors.white,
-                size: 30,
-              ),
+  Widget _saveProfilePill() {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: _saving ? null : _saveProfile,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF1E8),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: _accentOrange),
+          ),
+          child: _saving
+              ? const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(_accentOrange),
+                  ),
+                )
+              : const Text(
+                  'Save profile',
+                  style: TextStyle(
+                    color: _accentOrange,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
         ),
       ),
     );
@@ -608,38 +582,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                               onTap: _showRestrictionsSheet,
                             ),
                           ),
+                          const SizedBox(height: 14),
+                          Align(
+                            alignment: Alignment.center,
+                            child: _saveProfilePill(),
+                          ),
                         ],
                       ),
                     ),
-            ),
-          ),
-          Positioned(
-            left: 20,
-            right: 20,
-            bottom: 20 + MediaQuery.of(context).padding.bottom,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _actionBubble(
-                  icon: CupertinoIcons.back,
-                  onTap: () => Navigator.maybePop(context),
-                ),
-                _actionBubble(
-                  icon: CupertinoIcons.check_mark,
-                  onTap: _saving ? null : _saveProfile,
-                  child: _saving
-                      ? const Padding(
-                          padding: EdgeInsets.all(20),
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                      : null,
-                ),
-              ],
             ),
           ),
         ],

@@ -23,7 +23,6 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
   static const Color _accentOrange = Color(0xFFFF751F);
   static const Color _textDark = Color(0xFF141414);
   static const Color _textMuted = Color(0xFF74788C);
-  static const Color _divider = Color(0xFFE9ECF3);
   static const Color _error = Color(0xFFD64545);
 
   final List<String> _supermarkets = const ['Lidl', 'Kaufland'];
@@ -529,24 +528,41 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
     required String label,
     required String value,
     required VoidCallback onTap,
+    bool groupedStyle = false,
+    bool isFirstInGroup = false,
+    bool isLastInGroup = false,
   }) {
+    final rowBorderRadius = groupedStyle
+        ? BorderRadius.only(
+            topLeft: isFirstInGroup ? const Radius.circular(22) : Radius.zero,
+            topRight: isFirstInGroup ? const Radius.circular(22) : Radius.zero,
+            bottomLeft: isLastInGroup ? const Radius.circular(22) : Radius.zero,
+            bottomRight: isLastInGroup ? const Radius.circular(22) : Radius.zero,
+          )
+        : BorderRadius.circular(22);
+
     return Container(
       height: 78,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x14000000),
-            blurRadius: 24,
-            offset: Offset(0, 10),
-          ),
-        ],
+        color: groupedStyle ? Colors.transparent : Colors.white,
+        borderRadius: rowBorderRadius,
+        border: groupedStyle && !isLastInGroup
+            ? const Border(bottom: BorderSide(color: Color(0xFFE8EDF4)))
+            : null,
+        boxShadow: groupedStyle
+            ? null
+            : const [
+                BoxShadow(
+                  color: Color(0x14000000),
+                  blurRadius: 24,
+                  offset: Offset(0, 10),
+                ),
+              ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: rowBorderRadius,
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -591,6 +607,89 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
     );
   }
 
+  Widget _buildMultipleStoresRow({required bool groupedStyle}) {
+    return Container(
+      height: 78,
+      decoration: BoxDecoration(
+        color: groupedStyle ? Colors.transparent : Colors.white,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Row(
+          children: [
+            const Text(
+              'Multiple stores',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: _textDark,
+              ),
+            ),
+            const Spacer(),
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF2F3F8),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                onPressed: _showMultipleStoresInfo,
+                icon: const Icon(
+                  CupertinoIcons.question_circle_fill,
+                  size: 18,
+                  color: _textMuted,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            CupertinoSwitch(
+              activeTrackColor: _accentOrange,
+              value: _multipleStores,
+              onChanged: _toggleMultipleStores,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContinuePill() {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: _isLoading ? null : _continue,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF1E8),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: _accentOrange),
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(_accentOrange),
+                  ),
+                )
+              : const Text(
+                  'Generate list',
+                  style: TextStyle(
+                    color: _accentOrange,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final topInset = MediaQuery.of(context).padding.top;
@@ -612,7 +711,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                 borderRadius: BorderRadius.vertical(top: Radius.circular(34)),
               ),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 28, 24, 110),
+                padding: const EdgeInsets.fromLTRB(24, 28, 24, 40),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -635,12 +734,47 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    _buildValueCard(
-                      label: 'Budget',
-                      value: _budget == null
-                          ? 'Enter Budget'
-                          : '${_budget!.toStringAsFixed(0)} RON',
-                      onTap: _openBudgetSheet,
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(22),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x14000000),
+                            blurRadius: 24,
+                            offset: Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          _buildValueCard(
+                            label: 'Budget',
+                            value: _budget == null
+                                ? 'Enter Budget'
+                                : '${_budget!.toStringAsFixed(0)} RON',
+                            onTap: _openBudgetSheet,
+                            groupedStyle: true,
+                            isFirstInGroup: true,
+                          ),
+                          _buildValueCard(
+                            label: 'Supermarket',
+                            value: _multipleStores &&
+                                    _selectedMultipleStores.isNotEmpty
+                                ? _selectedMultipleStores.join(', ')
+                                : (_selectedSupermarket ?? 'Choose Supermarket'),
+                            onTap: _openSupermarketPicker,
+                            groupedStyle: true,
+                          ),
+                          _buildValueCard(
+                            label: 'Duration',
+                            value: '$_shoppingDays days',
+                            onTap: _openDurationPicker,
+                            groupedStyle: true,
+                          ),
+                          _buildMultipleStoresRow(groupedStyle: true),
+                        ],
+                      ),
                     ),
                     if (_budgetError != null)
                       Padding(
@@ -654,14 +788,6 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                           ),
                         ),
                       ),
-                    const SizedBox(height: 18),
-                    _buildValueCard(
-                      label: 'Supermarket',
-                      value: _multipleStores && _selectedMultipleStores.isNotEmpty
-                          ? _selectedMultipleStores.join(', ')
-                          : (_selectedSupermarket ?? 'Choose Supermarket'),
-                      onTap: _openSupermarketPicker,
-                    ),
                     if (_supermarketError != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 8, left: 8),
@@ -674,66 +800,6 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                           ),
                         ),
                       ),
-                    const SizedBox(height: 18),
-                    _buildValueCard(
-                      label: 'Duration',
-                      value: '$_shoppingDays days',
-                      onTap: _openDurationPicker,
-                    ),
-                    const SizedBox(height: 18),
-                    Container(
-                      height: 78,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(22),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x14000000),
-                            blurRadius: 24,
-                            offset: Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Row(
-                          children: [
-                            const Text(
-                              'Multiple stores',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                color: _textDark,
-                              ),
-                            ),
-                            const Spacer(),
-                            Container(
-                              width: 28,
-                              height: 28,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF2F3F8),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: IconButton(
-                                padding: EdgeInsets.zero,
-                                onPressed: _showMultipleStoresInfo,
-                                icon: const Icon(
-                                  CupertinoIcons.question_circle_fill,
-                                  size: 18,
-                                  color: _textMuted,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            CupertinoSwitch(
-                              activeTrackColor: _accentOrange,
-                              value: _multipleStores,
-                              onChanged: _toggleMultipleStores,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
                     if (_generateError != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 10, left: 8),
@@ -746,72 +812,12 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                           ),
                         ),
                       ),
-                    const SizedBox(height: 8),
-                    const Divider(color: _divider),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 20,
-            bottom: 20 + MediaQuery.of(context).padding.bottom,
-            child: Container(
-              width: 68,
-              height: 68,
-              decoration: const BoxDecoration(
-                color: _accentOrange,
-                shape: BoxShape.circle,
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: () => Navigator.maybePop(context),
-                  child: const Center(
-                    child: Icon(
-                      CupertinoIcons.back,
-                      color: Colors.white,
-                      size: 30,
+                    const SizedBox(height: 14),
+                    Align(
+                      alignment: Alignment.center,
+                      child: _buildContinuePill(),
                     ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            right: 20,
-            bottom: 20 + MediaQuery.of(context).padding.bottom,
-            child: Container(
-              width: 68,
-              height: 68,
-              decoration: const BoxDecoration(
-                color: _accentOrange,
-                shape: BoxShape.circle,
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: _isLoading ? null : _continue,
-                  child: Center(
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 26,
-                            height: 26,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.4,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
-                          )
-                        : const Icon(
-                            CupertinoIcons.sparkles,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                  ),
+                  ],
                 ),
               ),
             ),

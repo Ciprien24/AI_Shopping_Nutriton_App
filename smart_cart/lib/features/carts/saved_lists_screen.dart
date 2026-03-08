@@ -173,32 +173,6 @@ class _SavedListsScreenState extends State<SavedListsScreen> {
               ),
             ),
           ),
-          Positioned(
-            left: 20,
-            bottom: 20 + MediaQuery.of(context).padding.bottom,
-            child: Container(
-              width: 68,
-              height: 68,
-              decoration: const BoxDecoration(
-                color: _accentOrange,
-                shape: BoxShape.circle,
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: () => Navigator.maybePop(context),
-                  child: const Center(
-                    child: Icon(
-                      CupertinoIcons.back,
-                      color: Colors.white,
-                      size: 30,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );

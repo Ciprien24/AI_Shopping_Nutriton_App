@@ -53,26 +53,17 @@ class CartsScreen extends StatelessWidget {
                           letterSpacing: -0.2,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      const Text(
-                        '',
-                        style: TextStyle(
-                          color: Color(0xFF74788C),
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      _SupermarketCard(
-                        name: _stores[0].name,
-                        assetPath: _stores[0].asset,
-                        onTap: () => _openStore(context, _stores[0].name),
-                      ),
                       const SizedBox(height: 18),
-                      _SupermarketCard(
-                        name: _stores[1].name,
-                        assetPath: _stores[1].asset,
-                        onTap: () => _openStore(context, _stores[1].name),
+                      _SupermarketGroup(
+                        stores: _stores,
+                        onTapStore: (store) => _openStore(context, store),
+                      ),
+                      const SizedBox(height: 14),
+                      Align(
+                        alignment: Alignment.center,
+                        child: _NewListPill(
+                          onTap: () => _openPreferences(context),
+                        ),
                       ),
                     ],
                   ),
@@ -83,64 +74,48 @@ class CartsScreen extends StatelessWidget {
               left: 20,
               bottom: 20 + MediaQuery.of(context).padding.bottom,
               child: Container(
-                width: 68,
-                height: 68,
+                width: 40,
+                height: 40,
                 decoration: const BoxDecoration(
-                  color: _accentOrange,
+                  color: Colors.white,
                   shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x14000000),
+                      blurRadius: 12,
+                      offset: Offset(0, 6),
+                    ),
+                  ],
                 ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const UserProfileScreen(),
+                child: PopupMenuButton<String>(
+                  tooltip: 'Menu',
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  onSelected: (value) {
+                    if (value == 'profile') {
+                      _openProfile(context);
+                    }
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem<String>(
+                      value: 'profile',
+                      child: Text(
+                        'User page',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: _textDark,
                         ),
-                      );
-                    },
-                    child: const Center(
-                      child: Icon(
-                        CupertinoIcons.person_fill,
-                        color: Colors.white,
-                        size: 30,
                       ),
                     ),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              right: 20,
-              bottom: 20 + MediaQuery.of(context).padding.bottom,
-              child: Container(
-                width: 68,
-                height: 68,
-                decoration: const BoxDecoration(
-                  color: _accentOrange,
-                  shape: BoxShape.circle,
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const PreferencesScreen(),
-                        ),
-                      );
-                    },
-                    child: Center(
-                      child: Image.asset(
-                        'lib/app/assets/Button_logo.png',
-                        width: 100,
-                        height: 100,
-                        fit: BoxFit.contain,
-                      ),
+                  ],
+                  child: const Center(
+                    child: Icon(
+                      CupertinoIcons.chevron_up,
+                      color: _textDark,
+                      size: 18,
                     ),
                   ),
                 ),
@@ -148,6 +123,24 @@ class CartsScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _openProfile(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const UserProfileScreen(),
+      ),
+    );
+  }
+
+  void _openPreferences(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PreferencesScreen(),
       ),
     );
   }
@@ -195,21 +188,15 @@ class CartsScreen extends StatelessWidget {
   }
 }
 
-class _SupermarketCard extends StatelessWidget {
-  final String name;
-  final String assetPath;
-  final VoidCallback onTap;
+class _SupermarketGroup extends StatelessWidget {
+  final List<({String name, String asset})> stores;
+  final ValueChanged<String> onTapStore;
 
-  const _SupermarketCard({
-    required this.name,
-    required this.assetPath,
-    required this.onTap,
-  });
+  const _SupermarketGroup({required this.stores, required this.onTapStore});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 78,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
@@ -223,43 +210,120 @@ class _SupermarketCard extends StatelessWidget {
       ),
       child: Material(
         color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(22),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 80,
-                  height: 80,
-                  child: Image.asset(
-                    assetPath,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, _, _) => const Icon(
-                      CupertinoIcons.shopping_cart,
-                      size: 18,
-                      color: CartsScreen._textDark,
-                    ),
-                  ),
+        child: Column(
+          children: [
+            for (var i = 0; i < stores.length; i += 1)
+              _SupermarketRow(
+                name: stores[i].name,
+                assetPath: stores[i].asset,
+                isFirst: i == 0,
+                isLast: i == stores.length - 1,
+                onTap: () => onTapStore(stores[i].name),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SupermarketRow extends StatelessWidget {
+  final String name;
+  final String assetPath;
+  final bool isFirst;
+  final bool isLast;
+  final VoidCallback onTap;
+
+  const _SupermarketRow({
+    required this.name,
+    required this.assetPath,
+    required this.isFirst,
+    required this.isLast,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final rowRadius = BorderRadius.only(
+      topLeft: isFirst ? const Radius.circular(22) : Radius.zero,
+      topRight: isFirst ? const Radius.circular(22) : Radius.zero,
+      bottomLeft: isLast ? const Radius.circular(22) : Radius.zero,
+      bottomRight: isLast ? const Radius.circular(22) : Radius.zero,
+    );
+
+    return InkWell(
+      borderRadius: rowRadius,
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        decoration: BoxDecoration(
+          border: !isLast
+              ? const Border(bottom: BorderSide(color: Color(0xFFE8EDF4)))
+              : null,
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 80,
+              height: 54,
+              child: Image.asset(
+                assetPath,
+                fit: BoxFit.contain,
+                errorBuilder: (_, _, _) => const Icon(
+                  CupertinoIcons.shopping_cart,
+                  size: 18,
+                  color: CartsScreen._textDark,
                 ),
-                const SizedBox(width: 18),
-                Expanded(
-                  child: Text(
-                    name,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                      color: CartsScreen._textDark,
-                    ),
-                  ),
+              ),
+            ),
+            const SizedBox(width: 18),
+            Expanded(
+              child: Text(
+                name,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: CartsScreen._textDark,
                 ),
-                const Icon(
-                  CupertinoIcons.chevron_right,
-                  color: CartsScreen._accentOrange,
-                  size: 22,
-                ),
-              ],
+              ),
+            ),
+            const Icon(
+              CupertinoIcons.chevron_right,
+              color: CartsScreen._accentOrange,
+              size: 22,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NewListPill extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _NewListPill({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF1E8),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: CartsScreen._accentOrange),
+          ),
+          child: const Text(
+            '+ New list',
+            style: TextStyle(
+              color: CartsScreen._accentOrange,
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
             ),
           ),
         ),

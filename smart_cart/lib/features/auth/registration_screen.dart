@@ -604,29 +604,23 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             left: 20,
             right: 20,
             bottom: 20 + MediaQuery.of(context).padding.bottom,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _actionBubble(
-                  icon: CupertinoIcons.back,
-                  onTap: () => Navigator.maybePop(context),
-                ),
-                _actionBubble(
-                  icon: CupertinoIcons.check_mark,
-                  onTap: _saving ? null : _register,
-                  child: _saving
-                      ? const Padding(
-                          padding: EdgeInsets.all(20),
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: _actionBubble(
+                icon: CupertinoIcons.check_mark,
+                onTap: _saving ? null : _register,
+                child: _saving
+                    ? const Padding(
+                        padding: EdgeInsets.all(20),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
                           ),
-                        )
-                      : null,
-                ),
-              ],
+                        ),
+                      )
+                    : null,
+              ),
             ),
           ),
         ],

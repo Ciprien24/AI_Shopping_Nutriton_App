@@ -566,16 +566,6 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     await _repository.save(entity);
   }
 
-  Future<void> _saveNow() async {
-    _saveDebounce?.cancel();
-    if (!_isSaving) return;
-    await _persistEdits();
-    if (!mounted) return;
-    setState(() {
-      _isSaving = false;
-    });
-  }
-
   Widget _buildHeader(double topInset) {
     return Container(
       height: 150 + topInset,
@@ -815,14 +805,64 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     );
   }
 
-  Widget _buildItemCard(ShoppingItem item) {
+  Widget _buildItemGroup(List<ShoppingItem> items) {
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x12000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          for (var index = 0; index < items.length; index += 1)
+            _buildItemCard(
+              items[index],
+              groupedStyle: true,
+              isFirstInGroup: index == 0,
+              isLastInGroup: index == items.length - 1,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItemCard(
+    ShoppingItem item, {
+    bool groupedStyle = false,
+    bool isFirstInGroup = false,
+    bool isLastInGroup = false,
+  }) {
     final displayName = _displayNameFor(item);
     final isCompleting = _completingItems.contains(item);
     final isDeleting = _deletingItems.contains(item);
     final isAnimatingOut = isCompleting || isDeleting;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Slidable(
+    final rowBorderRadius = groupedStyle
+        ? BorderRadius.only(
+            topLeft: isFirstInGroup ? const Radius.circular(22) : Radius.zero,
+            topRight: isFirstInGroup ? const Radius.circular(22) : Radius.zero,
+            bottomLeft: isLastInGroup ? const Radius.circular(22) : Radius.zero,
+            bottomRight: isLastInGroup ? const Radius.circular(22) : Radius.zero,
+          )
+        : BorderRadius.circular(22);
+    final deleteActionBorderRadius = groupedStyle
+        ? BorderRadius.only(
+            topRight: isFirstInGroup ? const Radius.circular(22) : Radius.zero,
+            bottomRight: isLastInGroup ? const Radius.circular(22) : Radius.zero,
+          )
+        : const BorderRadius.only(
+            topRight: Radius.circular(22),
+            bottomRight: Radius.circular(22),
+          );
+
+    final itemWidget = Slidable(
         key: ObjectKey(item),
         endActionPane: ActionPane(
           motion: const DrawerMotion(),
@@ -846,10 +886,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
               onPressed: (_) => _deleteItem(item),
               padding: EdgeInsets.zero,
               backgroundColor: const Color(0xFFD64545),
-              borderRadius: const BorderRadius.only(
-                topRight: Radius.circular(22),
-                bottomRight: Radius.circular(22),
-              ),
+              borderRadius: deleteActionBorderRadius,
               child: const Icon(
                 CupertinoIcons.delete,
                 color: Colors.white,
@@ -887,15 +924,24 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                         ? const Color(0xFF9EF2BF)
                         : isDeleting
                         ? const Color(0xFFFFC6C6)
+                        : groupedStyle
+                        ? Colors.transparent
                         : Colors.white,
-                    borderRadius: BorderRadius.circular(22),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x12000000),
-                        blurRadius: 18,
-                        offset: Offset(0, 8),
-                      ),
-                    ],
+                    borderRadius: rowBorderRadius,
+                    border: groupedStyle && !isLastInGroup && !isAnimatingOut
+                        ? const Border(
+                            bottom: BorderSide(color: Color(0xFFE8EDF4)),
+                          )
+                        : null,
+                    boxShadow: groupedStyle
+                        ? null
+                        : const [
+                            BoxShadow(
+                              color: Color(0x12000000),
+                              blurRadius: 18,
+                              offset: Offset(0, 8),
+                            ),
+                          ],
                   ),
                   padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
                   child: Row(
@@ -1032,7 +1078,11 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
             ),
           ),
         ),
-      ),
+      );
+    if (groupedStyle) return itemWidget;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: itemWidget,
     );
   }
 
@@ -1511,12 +1561,11 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     final logoPath = _storeLogoFor(widget.preferences.supermarket);
 
     return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) async {
-        if (didPop) return;
-        await _saveNow();
-        if (!mounted) return;
-        Navigator.of(this.context).pop();
+      canPop: true,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) return;
+        _saveDebounce?.cancel();
+        unawaited(_persistEdits());
       },
       child: Scaffold(
         backgroundColor: _pageBackground,
@@ -1599,7 +1648,8 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                                           ),
                                         ),
                                       ),
-                                      ...entry.value.map(_buildItemCard),
+                                      _buildItemGroup(entry.value),
+                                      const SizedBox(height: 12),
                                     ],
                                     const SizedBox(height: 8),
                                     Container(
@@ -1664,9 +1714,9 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                                                   ),
                                                 ),
                                               ]
-                                            : completedItems
-                                                .map(_buildItemCard)
-                                                .toList(),
+                                            : [
+                                                _buildItemGroup(completedItems),
+                                              ],
                                       ),
                                     ),
                                   ],
@@ -1678,36 +1728,6 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                               ),
                       ),
                     ],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: 20,
-              bottom: 20 + MediaQuery.of(context).padding.bottom,
-              child: Container(
-                width: 68,
-                height: 68,
-                decoration: const BoxDecoration(
-                  color: _accentOrange,
-                  shape: BoxShape.circle,
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: () async {
-                      await _saveNow();
-                      if (!mounted) return;
-                      Navigator.of(this.context).maybePop();
-                    },
-                    child: const Center(
-                      child: Icon(
-                        CupertinoIcons.back,
-                        color: Colors.white,
-                        size: 30,
-                      ),
-                    ),
                   ),
                 ),
               ),
