@@ -13,8 +13,8 @@ class CartsScreen extends StatelessWidget {
   static const Color _textDark = Color(0xFF141414);
 
   static const List<({String name, String asset})> _stores = [
-    (name: 'Kaufland', asset: 'lib/app/assets/kaufland.png'),
     (name: 'Lidl', asset: 'lib/app/assets/lidl.png'),
+    (name: 'Kaufland', asset: 'lib/app/assets/kaufland.png'),
   ];
 
   @override

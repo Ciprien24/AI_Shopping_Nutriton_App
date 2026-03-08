@@ -47,6 +47,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
   final Set<ShoppingItem> _deletingItems = <ShoppingItem>{};
   bool _showCompleted = false;
   _ShoppingTab _activeTab = _ShoppingTab.list;
+  int _selectedRecipeDay = 1;
 
   @override
   void initState() {
@@ -649,23 +650,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                   ),
                 ),
               ),
-              GestureDetector(
-                onTap: _showAiReasoningSheet,
-                child: Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF2F3F8),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: const Color(0xFFE4E8F1)),
-                  ),
-                  child: const Icon(
-                    CupertinoIcons.question,
-                    size: 16,
-                    color: _textMuted,
-                  ),
-                ),
-              ),
+              _buildQuestionBubble(onTap: _showAiReasoningSheet, size: 24),
             ],
           ),
           const SizedBox(height: 10),
@@ -758,6 +743,75 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
           color: _textMuted,
         ),
       ),
+    );
+  }
+
+  Widget _buildQuestionBubble({required VoidCallback onTap, double size = 28}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF2F3F8),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: const Color(0xFFE4E8F1)),
+        ),
+        child: Icon(
+          CupertinoIcons.question,
+          size: size <= 24 ? 13 : 16,
+          color: _textMuted,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showRecipeReasoningSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'How AI chose these meals',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: _textDark,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                _sheetInfoPill('Day: $_selectedRecipeDay of $_recipeDaysCount'),
+                const SizedBox(height: 8),
+                _sheetInfoPill('Goal: ${widget.preferences.goal}'),
+                const SizedBox(height: 8),
+                _sheetInfoPill(
+                  'Period: ${widget.preferences.shoppingDays} days',
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  'AI meal reasoning placeholder: recipes are currently demo suggestions. In a later update, this section will explain nutrition targets, budget constraints, ingredient reuse across days, and why each meal was selected.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: _textDark,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -982,27 +1036,50 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     );
   }
 
-  Map<String, List<_RecipePlaceholder>> _buildPlaceholderRecipesByMeal() {
-    final firstItems = _items
+  int get _recipeDaysCount {
+    final days = widget.preferences.shoppingDays;
+    return days < 1 ? 1 : days;
+  }
+
+  String _ingredientPreviewForDay(int day) {
+    final allActiveNames = _items
         .where((item) => !item.checked)
-        .take(4)
         .map((item) => _displayNameFor(item))
         .toList(growable: false);
 
-    final ingredientPreview = firstItems.isEmpty
-        ? 'Built from your generated shopping list'
-        : firstItems.join(' • ');
+    if (allActiveNames.isEmpty) {
+      return 'Built from your generated shopping list';
+    }
+
+    final start = (day - 1) % allActiveNames.length;
+    final rotated = <String>[];
+    for (var i = 0; i < allActiveNames.length; i += 1) {
+      rotated.add(allActiveNames[(start + i) % allActiveNames.length]);
+    }
+
+    return rotated.take(4).join(' • ');
+  }
+
+  Map<String, List<_RecipePlaceholder>> _buildPlaceholderRecipesByMeal({
+    required int day,
+  }) {
+    final ingredientPreview = _ingredientPreviewForDay(day);
+    final isEvenDay = day % 2 == 0;
+    final breakfastTitle = isEvenDay ? 'Greek Yogurt Power Bowl' : 'Protein Oats Bowl';
+    final lunchTitle = isEvenDay ? 'Chicken Rice Plate' : 'Protein Bowl';
+    final dinnerTitle = isEvenDay ? 'Salmon Veggie Plate' : 'Veggie Pasta';
+    final snackTitle = isEvenDay ? 'Crunchy Nuts Mix' : 'Yogurt Fruit Snack';
 
     return {
       'Breakfast': [
         _RecipePlaceholder(
-          title: 'Protein Oats Bowl',
+          title: breakfastTitle,
           subtitle: 'Quick morning meal',
           duration: '15 min',
           difficulty: 'Easy',
           calories: 420,
           description:
-              'AI recipe recommendation placeholder. This will soon be personalized from your list and nutrition goals.',
+              'Day $day placeholder breakfast. This will be personalized from your list and nutrition goals.',
           mealInfo:
               'A balanced breakfast placeholder focused on slow carbs and protein for sustained energy.',
           ingredientsPreview: ingredientPreview,
@@ -1010,13 +1087,13 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
       ],
       'Lunch': [
         _RecipePlaceholder(
-          title: 'Protein Bowl',
+          title: lunchTitle,
           subtitle: 'Balanced midday option',
           duration: '25 min',
           difficulty: 'Medium',
           calories: 560,
           description:
-              'Placeholder recipe card. Future AI will optimize ingredients, portions, and prices across selected stores.',
+              'Day $day placeholder lunch. Future AI will optimize ingredients, portions, and prices across selected stores.',
           mealInfo:
               'Lunch placeholder with a protein base, vegetables, and a carb side for better satiety.',
           ingredientsPreview: ingredientPreview,
@@ -1024,13 +1101,13 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
       ],
       'Dinner': [
         _RecipePlaceholder(
-          title: 'Veggie Pasta',
+          title: dinnerTitle,
           subtitle: 'Light dinner option',
           duration: '35 min',
           difficulty: 'Medium',
           calories: 510,
           description:
-              'Placeholder recipe card. AI will later adapt this using your available products and preferences.',
+              'Day $day placeholder dinner. AI will later adapt this using your available products and preferences.',
           mealInfo:
               'Dinner placeholder designed to be lighter while still covering key macro needs.',
           ingredientsPreview: ingredientPreview,
@@ -1038,13 +1115,13 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
       ],
       'Snacks': [
         _RecipePlaceholder(
-          title: 'Yogurt Fruit Snack',
+          title: snackTitle,
           subtitle: 'Simple snack idea',
           duration: '10 min',
           difficulty: 'Easy',
           calories: 230,
           description:
-              'Placeholder snack recommendation. AI will later suggest budget-friendly snack alternatives.',
+              'Day $day placeholder snack. AI will later suggest budget-friendly snack alternatives.',
           mealInfo:
               'Snack placeholder centered on a quick, practical option between main meals.',
           ingredientsPreview: ingredientPreview,
@@ -1054,7 +1131,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
   }
 
   Widget _buildRecipesSection({bool includeTitle = true}) {
-    final recipesByMeal = _buildPlaceholderRecipesByMeal();
+    final recipesByMeal = _buildPlaceholderRecipesByMeal(day: _selectedRecipeDay);
     const mealOrder = ['Breakfast', 'Lunch', 'Dinner', 'Snacks'];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1072,17 +1149,66 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
               ),
             ),
           ),
+        const SizedBox(height: 2),
+        SizedBox(
+          height: 34,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: _recipeDaysCount,
+            separatorBuilder: (_, _) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final day = index + 1;
+              final isActive = day == _selectedRecipeDay;
+              return GestureDetector(
+                onTap: () => setState(() => _selectedRecipeDay = day),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOut,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: isActive ? _accentOrange : const Color(0xFFF1F3F8),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: isActive ? _accentOrange : const Color(0xFFE4E8F1),
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    'Day $day',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      color: isActive ? Colors.white : _textMuted,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
         for (final meal in mealOrder) ...[
           if ((recipesByMeal[meal] ?? const []).isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(left: 4, bottom: 10, top: 4),
-              child: Text(
-                meal,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w900,
-                  color: _textDark,
-                ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      meal,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                        color: _textDark,
+                      ),
+                    ),
+                  ),
+                  if (meal == 'Breakfast')
+                    _buildQuestionBubble(
+                      onTap: _showRecipeReasoningSheet,
+                      size: 24,
+                    ),
+                ],
               ),
             ),
           ...(recipesByMeal[meal] ?? const []).map(
@@ -1586,53 +1712,54 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                 ),
               ),
             ),
-            Positioned(
-              right: 20,
-              bottom: 20 + MediaQuery.of(context).padding.bottom,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(22),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x1A000000),
-                      blurRadius: 16,
-                      offset: Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      _formatRon(_total),
-                      style: const TextStyle(
-                        color: _accentOrange,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
+            if (_activeTab == _ShoppingTab.list)
+              Positioned(
+                right: 20,
+                bottom: 20 + MediaQuery.of(context).padding.bottom,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x1A000000),
+                        blurRadius: 16,
+                        offset: Offset(0, 8),
                       ),
-                    ),
-                    if (widget.savedListId != null) const SizedBox(height: 2),
-                    if (widget.savedListId != null)
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
                       Text(
-                        _isSaving ? 'Saving...' : 'Saved',
-                        style: TextStyle(
-                          color: _isSaving
-                              ? const Color(0xFFF2B705)
-                              : const Color(0xFF1B9E45),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
+                        _formatRon(_total),
+                        style: const TextStyle(
+                          color: _accentOrange,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
-                  ],
+                      if (widget.savedListId != null) const SizedBox(height: 2),
+                      if (widget.savedListId != null)
+                        Text(
+                          _isSaving ? 'Saving...' : 'Saved',
+                          style: TextStyle(
+                            color: _isSaving
+                                ? const Color(0xFFF2B705)
+                                : const Color(0xFF1B9E45),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ),

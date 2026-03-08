@@ -26,7 +26,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
   static const Color _divider = Color(0xFFE9ECF3);
   static const Color _error = Color(0xFFD64545);
 
-  final List<String> _supermarkets = const ['Kaufland', 'Lidl'];
+  final List<String> _supermarkets = const ['Lidl', 'Kaufland'];
   double? _budget;
   String? _selectedSupermarket;
   List<String> _selectedMultipleStores = const [];

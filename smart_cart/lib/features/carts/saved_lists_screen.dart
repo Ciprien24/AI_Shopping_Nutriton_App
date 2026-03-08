@@ -73,13 +73,11 @@ class _SavedListsScreenState extends State<SavedListsScreen> {
     );
   }
 
-  String _formatDateTime(DateTime value) {
-    final y = value.year.toString().padLeft(4, '0');
-    final m = value.month.toString().padLeft(2, '0');
+  String _formatCreatedDate(DateTime value) {
     final d = value.day.toString().padLeft(2, '0');
-    final hh = value.hour.toString().padLeft(2, '0');
-    final mm = value.minute.toString().padLeft(2, '0');
-    return '$y-$m-$d • $hh:$mm';
+    final m = value.month.toString().padLeft(2, '0');
+    final yy = (value.year % 100).toString().padLeft(2, '0');
+    return '$d/$m/$yy';
   }
 
   String _storeLogoFor(String store) {
@@ -157,9 +155,9 @@ class _SavedListsScreenState extends State<SavedListsScreen> {
                                     ),
                                   ),
                                   child: _SavedListCard(
-                                    title: list.title,
-                                    subtitle:
-                                        '${_formatDateTime(list.createdAt)} • ${list.items.length} items',
+                                    createdDate: _formatCreatedDate(
+                                      list.createdAt,
+                                    ),
                                     logoPath: _storeLogoFor(widget.store),
                                     onTap: () => _openSavedList(list),
                                   ),
@@ -258,17 +256,14 @@ class _SavedListsScreenState extends State<SavedListsScreen> {
 
 class _SavedListCard extends StatelessWidget {
   static const Color _textDark = Color(0xFF141414);
-  static const Color _textMuted = Color(0xFF74788C);
   static const Color _accentOrange = Color(0xFFFF751F);
 
-  final String title;
-  final String subtitle;
+  final String createdDate;
   final String logoPath;
   final VoidCallback onTap;
 
   const _SavedListCard({
-    required this.title,
-    required this.subtitle,
+    required this.createdDate,
     required this.logoPath,
     required this.onTap,
   });
@@ -298,38 +293,20 @@ class _SavedListCard extends StatelessWidget {
             child: Row(
               children: [
                 SizedBox(
-                  width: 56,
-                  height: 56,
+                  width: 72,
+                  height: 72,
                   child: Image.asset(logoPath, fit: BoxFit.contain),
                 ),
-                const SizedBox(width: 12),
                 Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: _textDark,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                        ),
+                  child: Center(
+                    child: Text(
+                      createdDate,
+                      style: const TextStyle(
+                        color: _textDark,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: _textMuted,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
                 const Icon(

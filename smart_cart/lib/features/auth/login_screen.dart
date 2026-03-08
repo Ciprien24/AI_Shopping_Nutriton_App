@@ -240,15 +240,38 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 14),
                     Center(
-                      child: TextButton(
-                        onPressed: _goToRegister,
-                        child: const Text(
-                          'No account? Create one',
-                          style: TextStyle(
-                            color: _textMuted,
-                            fontWeight: FontWeight.w800,
+                      child: Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          const Text(
+                            'No account? ',
+                            style: TextStyle(
+                              color: _textMuted,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
-                        ),
+                          TextButton(
+                            onPressed: _goToRegister,
+                            style: TextButton.styleFrom(
+                              foregroundColor: _accentOrange,
+                              minimumSize: Size.zero,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 2,
+                                vertical: 0,
+                              ),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text(
+                              'Create one',
+                              style: TextStyle(
+                                color: _accentOrange,
+                                fontWeight: FontWeight.w900,
+                                decoration: TextDecoration.underline,
+                                decorationThickness: 2,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -257,32 +280,20 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
           Positioned(
-            left: 20,
             right: 20,
             bottom: 20 + MediaQuery.of(context).padding.bottom,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _actionBubble(
-                  icon: CupertinoIcons.person_add,
-                  onTap: _goToRegister,
-                ),
-                _actionBubble(
-                  icon: CupertinoIcons.check_mark,
-                  onTap: _isLoading ? null : _login,
-                  child: _isLoading
-                      ? const Padding(
-                          padding: EdgeInsets.all(20),
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                      : null,
-                ),
-              ],
+            child: _actionBubble(
+              icon: CupertinoIcons.check_mark,
+              onTap: _isLoading ? null : _login,
+              child: _isLoading
+                  ? const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : null,
             ),
           ),
         ],
