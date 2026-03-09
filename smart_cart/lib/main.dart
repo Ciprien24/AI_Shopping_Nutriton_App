@@ -4,14 +4,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:smart_cart/core/config/supabase_config.dart';
 import 'package:smart_cart/core/candidates/candidate_builder.dart';
 import 'package:smart_cart/core/db/normalized_product_repository.dart';
 import 'package:smart_cart/core/db/product_cache_store.dart';
 import 'package:smart_cart/core/normalization/normalization_debug.dart';
+import 'package:smart_cart/core/services/supabase_client.dart';
 import 'package:smart_cart/features/auth/login_screen.dart';
+import 'package:smart_cart/features/carts/carts_screen.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  SupabaseConfig.validate();
+  await Supabase.initialize(
+    url: SupabaseConfig.url,
+    anonKey: SupabaseConfig.anonKey,
+  );
   if (kDebugMode) {
     unawaited(_debugNormalizationFromCachedLidl());
     unawaited(_debugCandidateStats());
@@ -102,7 +111,25 @@ class SmartCartApp extends StatelessWidget {
           child: child ?? const SizedBox.shrink(),
         );
       },
-      home: const LoginScreen(),
+      home: const _AuthGate(),
+    );
+  }
+}
+
+class _AuthGate extends StatelessWidget {
+  const _AuthGate();
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<AuthState>(
+      stream: supabase.auth.onAuthStateChange,
+      builder: (context, snapshot) {
+        final session = snapshot.data?.session ?? supabase.auth.currentSession;
+        if (session == null) {
+          return const LoginScreen();
+        }
+        return const CartsScreen();
+      },
     );
   }
 }

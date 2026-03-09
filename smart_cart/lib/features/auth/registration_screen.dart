@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:smart_cart/core/local_auth_store.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:smart_cart/core/services/profile_service.dart';
+import 'package:smart_cart/core/services/supabase_client.dart';
 import 'package:smart_cart/core/user_profile.dart';
 import 'package:smart_cart/core/user_profile_store.dart';
 
@@ -38,7 +40,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     'Very high',
   ];
 
-  final LocalAuthStore _authStore = LocalAuthStore();
   final UserProfileStore _profileStore = UserProfileStore();
 
   final TextEditingController _emailController = TextEditingController();
@@ -74,22 +75,50 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
     setState(() => _saving = true);
 
-    await _authStore.saveCredentials(email: email, password: password);
-    await _profileStore.save(
-      UserProfile(
-        age: _age.clamp(1, 120),
-        heightCm: _heightCm.clamp(60, 250),
-        goal: _goal,
-        sex: _sex,
-        activityLevel: _activityLevel,
-        foodRestrictions: _foodRestrictions.trim(),
-      ),
-    );
+    try {
+      final response = await supabase.auth.signUp(
+        email: email,
+        password: password,
+      );
+      final user = response.user;
+      if (user == null) {
+        _showMessage('Account created. Check your email, then sign in.');
+        return;
+      }
 
-    if (!mounted) return;
-    setState(() => _saving = false);
-    _showMessage('Account created.');
-    Navigator.of(context).pop(email);
+      await ensureProfileRow(user: user);
+
+      await _profileStore.save(
+        UserProfile(
+          age: _age.clamp(1, 120),
+          heightCm: _heightCm.clamp(60, 250),
+          goal: _goal,
+          sex: _sex,
+          activityLevel: _activityLevel,
+          foodRestrictions: _foodRestrictions.trim(),
+        ),
+      );
+
+      if (!mounted) return;
+      _showMessage('Account created.');
+      Navigator.of(context).pop(email);
+    } on AuthException catch (error) {
+      if (mounted) {
+        _showMessage(error.message);
+      }
+    } on PostgrestException catch (_) {
+      if (mounted) {
+        _showMessage('Account created, but failed to sync your profile.');
+      }
+    } catch (_) {
+      if (mounted) {
+        _showMessage('Unable to create account right now. Try again.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
+    }
   }
 
   void _showMessage(String text) {

@@ -126,69 +126,60 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  Widget _valueCard({required String title, required Widget child}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x14000000),
-            blurRadius: 20,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: _textDark,
-              fontSize: 14,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 8),
-          child,
-        ],
-      ),
-    );
-  }
-
-  Widget _fieldRow({
+  Widget _buildProfileRow({
+    required String label,
     required String value,
     required VoidCallback onTap,
+    bool isLast = false,
   }) {
     return InkWell(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: isLast
+          ? const BorderRadius.only(
+              bottomLeft: Radius.circular(22),
+              bottomRight: Radius.circular(22),
+            )
+          : BorderRadius.zero,
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        height: 78,
         decoration: BoxDecoration(
-          color: const Color(0xFFF2F3F8),
-          borderRadius: BorderRadius.circular(14),
+          border: isLast
+              ? null
+              : const Border(bottom: BorderSide(color: Color(0xFFE8EDF4))),
         ),
         child: Row(
           children: [
+            const SizedBox(width: 20),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: _textDark,
+              ),
+            ),
+            const Spacer(),
             Expanded(
               child: Text(
                 value,
+                textAlign: TextAlign.right,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  color: _textDark,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
+                  color: _textMuted,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),
+            const SizedBox(width: 10),
             const Icon(
               CupertinoIcons.chevron_right,
-              size: 18,
+              size: 22,
               color: _accentOrange,
             ),
+            const SizedBox(width: 20),
           ],
         ),
       ),
@@ -433,9 +424,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFF1E8),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: _accentOrange),
+            border: Border.all(color: const Color(0xFFE8EDF4)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x14000000),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
           ),
           child: _saving
               ? const SizedBox(
@@ -446,13 +444,24 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     valueColor: AlwaysStoppedAnimation<Color>(_accentOrange),
                   ),
                 )
-              : const Text(
-                  'Save profile',
-                  style: TextStyle(
-                    color: _accentOrange,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                  ),
+              : const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      CupertinoIcons.check_mark_circled_solid,
+                      size: 14,
+                      color: _accentOrange,
+                    ),
+                    SizedBox(width: 6),
+                    Text(
+                      'Save profile',
+                      style: TextStyle(
+                        color: _accentOrange,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
                 ),
         ),
       ),
@@ -498,88 +507,93 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             ),
                           ),
                           const SizedBox(height: 18),
-                          _valueCard(
-                            title: 'Age',
-                            child: _fieldRow(
-                              value: '$_age years',
-                              onTap: () => _showNumberSheet(
-                                title: 'Age',
-                                initialValue: _age.toString(),
-                                onApply: (value) {
-                                  final parsed = int.tryParse(value);
-                                  if (parsed != null) {
-                                    setState(() => _age = parsed.clamp(1, 120));
-                                  }
-                                },
-                              ),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(22),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x14000000),
+                                  blurRadius: 24,
+                                  offset: Offset(0, 10),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          _valueCard(
-                            title: 'Height (cm)',
-                            child: _fieldRow(
-                              value: '${_heightCm.toStringAsFixed(0)} cm',
-                              onTap: () => _showNumberSheet(
-                                title: 'Height (cm)',
-                                initialValue: _heightCm.toStringAsFixed(0),
-                                decimal: true,
-                                onApply: (value) {
-                                  final parsed = double.tryParse(value);
-                                  if (parsed != null) {
-                                    setState(() => _heightCm = parsed.clamp(60, 250));
-                                  }
-                                },
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          _valueCard(
-                            title: 'Goal',
-                            child: _fieldRow(
-                              value: _goal,
-                              onTap: () => _showSelectionSheet(
-                                title: 'Goal',
-                                options: _goals,
-                                current: _goal,
-                                onSelect: (value) => setState(() => _goal = value),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          _valueCard(
-                            title: 'Sex',
-                            child: _fieldRow(
-                              value: _sex,
-                              onTap: () => _showSelectionSheet(
-                                title: 'Sex',
-                                options: _sexOptions,
-                                current: _sex,
-                                onSelect: (value) => setState(() => _sex = value),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          _valueCard(
-                            title: 'Activity Level',
-                            child: _fieldRow(
-                              value: _activityLevel,
-                              onTap: () => _showSelectionSheet(
-                                title: 'Activity Level',
-                                options: _activityLevels,
-                                current: _activityLevel,
-                                onSelect: (value) =>
-                                    setState(() => _activityLevel = value),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          _valueCard(
-                            title: 'Food Restrictions',
-                            child: _fieldRow(
-                              value: _foodRestrictions.isEmpty
-                                  ? 'None'
-                                  : _foodRestrictions,
-                              onTap: _showRestrictionsSheet,
+                            child: Column(
+                              children: [
+                                _buildProfileRow(
+                                  label: 'Age',
+                                  value: '$_age years',
+                                  onTap: () => _showNumberSheet(
+                                    title: 'Age',
+                                    initialValue: _age.toString(),
+                                    onApply: (value) {
+                                      final parsed = int.tryParse(value);
+                                      if (parsed != null) {
+                                        setState(
+                                          () => _age = parsed.clamp(1, 120),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ),
+                                _buildProfileRow(
+                                  label: 'Height (cm)',
+                                  value: '${_heightCm.toStringAsFixed(0)} cm',
+                                  onTap: () => _showNumberSheet(
+                                    title: 'Height (cm)',
+                                    initialValue: _heightCm.toStringAsFixed(0),
+                                    decimal: true,
+                                    onApply: (value) {
+                                      final parsed = double.tryParse(value);
+                                      if (parsed != null) {
+                                        setState(
+                                          () => _heightCm = parsed.clamp(60, 250),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ),
+                                _buildProfileRow(
+                                  label: 'Goal',
+                                  value: _goal,
+                                  onTap: () => _showSelectionSheet(
+                                    title: 'Goal',
+                                    options: _goals,
+                                    current: _goal,
+                                    onSelect: (value) => setState(() => _goal = value),
+                                  ),
+                                ),
+                                _buildProfileRow(
+                                  label: 'Sex',
+                                  value: _sex,
+                                  onTap: () => _showSelectionSheet(
+                                    title: 'Sex',
+                                    options: _sexOptions,
+                                    current: _sex,
+                                    onSelect: (value) => setState(() => _sex = value),
+                                  ),
+                                ),
+                                _buildProfileRow(
+                                  label: 'Activity Level',
+                                  value: _activityLevel,
+                                  onTap: () => _showSelectionSheet(
+                                    title: 'Activity Level',
+                                    options: _activityLevels,
+                                    current: _activityLevel,
+                                    onSelect: (value) =>
+                                        setState(() => _activityLevel = value),
+                                  ),
+                                ),
+                                _buildProfileRow(
+                                  label: 'Food Restrictions',
+                                  value: _foodRestrictions.isEmpty
+                                      ? 'None'
+                                      : _foodRestrictions,
+                                  onTap: _showRestrictionsSheet,
+                                  isLast: true,
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(height: 14),

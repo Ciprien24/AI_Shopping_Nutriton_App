@@ -1,8 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:smart_cart/core/local_auth_store.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:smart_cart/features/auth/registration_screen.dart';
-import 'package:smart_cart/features/carts/carts_screen.dart';
+import 'package:smart_cart/core/services/profile_service.dart';
+import 'package:smart_cart/core/services/supabase_client.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,7 +19,6 @@ class _LoginScreenState extends State<LoginScreen> {
   static const Color _textDark = Color(0xFF141414);
   static const Color _textMuted = Color(0xFF74788C);
 
-  final LocalAuthStore _authStore = LocalAuthStore();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -41,25 +41,29 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     setState(() => _isLoading = true);
-    final saved = await _authStore.loadCredentials();
-    if (!mounted) return;
-
-    if (saved == null) {
-      setState(() => _isLoading = false);
-      _showMessage('No account found. Create one first.');
-      return;
-    }
-
-    if (saved.email == email && saved.password == password) {
-      setState(() => _isLoading = false);
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const CartsScreen()),
+    try {
+      final response = await supabase.auth.signInWithPassword(
+        email: email,
+        password: password,
       );
-      return;
+      await ensureProfileRow(user: response.user);
+    } on AuthException catch (error) {
+      if (mounted) {
+        _showMessage(error.message);
+      }
+    } on PostgrestException catch (_) {
+      if (mounted) {
+        _showMessage('Signed in, but failed to sync your profile.');
+      }
+    } catch (_) {
+      if (mounted) {
+        _showMessage('Unable to sign in right now. Try again.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
-
-    setState(() => _isLoading = false);
-    _showMessage('Invalid email or password.');
   }
 
   void _showMessage(String text) {

@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:smart_cart/core/services/supabase_client.dart';
 import 'package:smart_cart/features/carts/saved_lists_screen.dart';
 import 'package:smart_cart/features/preferences/preferences_screen.dart';
 import 'package:smart_cart/features/profile/user_profile_screen.dart';
@@ -94,15 +98,24 @@ class CartsScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                   ),
                   onSelected: (value) {
-                    if (value == 'profile') {
-                      _openProfile(context);
-                    }
+                    unawaited(_handleMenuAction(context, value));
                   },
                   itemBuilder: (_) => const [
                     PopupMenuItem<String>(
                       value: 'profile',
                       child: Text(
                         'User page',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: _textDark,
+                        ),
+                      ),
+                    ),
+                    PopupMenuItem<String>(
+                      value: 'sign_out',
+                      child: Text(
+                        'Log out',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
@@ -134,6 +147,23 @@ class CartsScreen extends StatelessWidget {
         builder: (_) => const UserProfileScreen(),
       ),
     );
+  }
+
+  Future<void> _handleMenuAction(BuildContext context, String value) async {
+    if (value == 'profile') {
+      _openProfile(context);
+      return;
+    }
+    if (value == 'sign_out') {
+      try {
+        await supabase.auth.signOut();
+      } on AuthException catch (error) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.message)),
+        );
+      }
+    }
   }
 
   void _openPreferences(BuildContext context) {
@@ -314,9 +344,16 @@ class _NewListPill extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFF1E8),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: CartsScreen._accentOrange),
+            border: Border.all(color: const Color(0xFFE8EDF4)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x14000000),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
           ),
           child: const Text(
             '+ New list',

@@ -664,9 +664,16 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFF1E8),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: _accentOrange),
+            border: Border.all(color: const Color(0xFFE8EDF4)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x14000000),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
           ),
           child: _isLoading
               ? const SizedBox(
@@ -677,13 +684,24 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                     valueColor: AlwaysStoppedAnimation<Color>(_accentOrange),
                   ),
                 )
-              : const Text(
-                  'Generate list',
-                  style: TextStyle(
-                    color: _accentOrange,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                  ),
+              : const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      CupertinoIcons.sparkles,
+                      size: 14,
+                      color: _accentOrange,
+                    ),
+                    SizedBox(width: 6),
+                    Text(
+                      'Generate list',
+                      style: TextStyle(
+                        color: _accentOrange,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
                 ),
         ),
       ),
