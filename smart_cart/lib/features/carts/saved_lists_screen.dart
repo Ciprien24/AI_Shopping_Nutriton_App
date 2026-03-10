@@ -58,8 +58,10 @@ class _SavedListsScreenState extends State<SavedListsScreen> {
     }
   }
 
-  void _openSavedList(ShoppingListEntity entity) {
-    final mapped = ShoppingListMapper.toDomain(entity);
+  Future<void> _openSavedList(ShoppingListEntity entity) async {
+    final latest = await _repository.getById(entity.id);
+    if (!mounted) return;
+    final mapped = ShoppingListMapper.toDomain(latest ?? entity);
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -101,7 +103,7 @@ class _SavedListsScreenState extends State<SavedListsScreen> {
           Container(color: _pageBackground),
           _buildHeader(topInset),
           Positioned(
-            top: 110 + topInset,
+            top: 92 + topInset,
             left: 0,
             right: 0,
             bottom: 0,
@@ -180,11 +182,11 @@ class _SavedListsScreenState extends State<SavedListsScreen> {
 
   Widget _buildHeader(double topInset) {
     return Container(
-      height: 150 + topInset,
+      height: 128 + topInset,
       padding: EdgeInsets.fromLTRB(24, topInset + 2, 24, 0),
       decoration: const BoxDecoration(color: _headerBlue),
       child: const Align(
-        alignment: Alignment(0, -0.45),
+        alignment: Alignment(0, -0.72),
         child: Row(
           children: [
             SizedBox(

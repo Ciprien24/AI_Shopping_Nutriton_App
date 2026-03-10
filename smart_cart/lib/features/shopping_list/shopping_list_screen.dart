@@ -48,11 +48,13 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
   bool _showCompleted = false;
   _ShoppingTab _activeTab = _ShoppingTab.list;
   int _selectedRecipeDay = 1;
+  bool _showRecipeDayPicker = false;
 
   @override
   void initState() {
     super.initState();
     _items = List<ShoppingItem>.from(widget.plan.items);
+    _loadSavedItems();
   }
 
   @override
@@ -566,13 +568,40 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     await _repository.save(entity);
   }
 
+  Future<void> _loadSavedItems() async {
+    final id = widget.savedListId;
+    if (id == null) return;
+
+    final entity = await _repository.getById(id);
+    if (entity == null || !mounted) return;
+
+    setState(() {
+      _items = entity.items.map((item) {
+        final unitSuffix = (item.unit == null || item.unit!.isEmpty)
+            ? ''
+            : '-${item.unit}';
+        return ShoppingItem(
+          product: Product(
+            id: '${item.name}$unitSuffix',
+            name: item.name,
+            category: item.category ?? 'Other',
+            price: item.price,
+            store: entity.store ?? widget.preferences.supermarket,
+          ),
+          quantity: item.quantity,
+          checked: item.checked,
+        );
+      }).toList(growable: true);
+    });
+  }
+
   Widget _buildHeader(double topInset) {
     return Container(
-      height: 150 + topInset,
+      height: 128 + topInset,
       padding: EdgeInsets.fromLTRB(24, topInset + 2, 24, 0),
       decoration: const BoxDecoration(color: _headerBlue),
       child: const Align(
-        alignment: Alignment(0, -0.45),
+        alignment: Alignment(0, -0.72),
         child: Row(
           children: [
             SizedBox(
@@ -1200,42 +1229,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
             ),
           ),
         const SizedBox(height: 2),
-        SizedBox(
-          height: 34,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: _recipeDaysCount,
-            separatorBuilder: (_, _) => const SizedBox(width: 8),
-            itemBuilder: (context, index) {
-              final day = index + 1;
-              final isActive = day == _selectedRecipeDay;
-              return GestureDetector(
-                onTap: () => setState(() => _selectedRecipeDay = day),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  curve: Curves.easeOut,
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  decoration: BoxDecoration(
-                    color: isActive ? _accentOrange : const Color(0xFFF1F3F8),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: isActive ? _accentOrange : const Color(0xFFE4E8F1),
-                    ),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    'Day $day',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      color: isActive ? Colors.white : _textMuted,
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
+        _buildRecipeDaySelector(),
         const SizedBox(height: 8),
         for (final meal in mealOrder) ...[
           if ((recipesByMeal[meal] ?? const []).isNotEmpty)
@@ -1341,6 +1335,96 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
           ),
         ],
       ],
+    );
+  }
+
+  Widget _buildRecipeDaySelector() {
+    return SizedBox(
+      height: 34,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            width: _showRecipeDayPicker ? 230 : 0,
+            height: 34,
+            padding: EdgeInsets.symmetric(horizontal: _showRecipeDayPicker ? 6 : 0),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F3F8),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: const Color(0xFFE4E8F1)),
+            ),
+            child: ClipRect(
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 150),
+                opacity: _showRecipeDayPicker ? 1 : 0,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _recipeDaysCount,
+                  separatorBuilder: (_, _) => const SizedBox(width: 6),
+                  itemBuilder: (context, index) => _buildRecipeDayChip(day: index + 1),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _showRecipeDayPicker = !_showRecipeDayPicker;
+              });
+            },
+            child: Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: const Color(0xFFE4E8F1)),
+              ),
+              child: const Icon(
+                Icons.calendar_month_outlined,
+                size: 17,
+                color: _textDark,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecipeDayChip({required int day}) {
+    final isActive = day == _selectedRecipeDay;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedRecipeDay = day;
+          _showRecipeDayPicker = false;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: isActive ? _accentOrange : Colors.white,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: isActive ? _accentOrange : const Color(0xFFE4E8F1),
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          'Day $day',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w900,
+            color: isActive ? Colors.white : _textMuted,
+          ),
+        ),
+      ),
     );
   }
 
@@ -1574,7 +1658,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
             Container(color: _pageBackground),
             _buildHeader(topInset),
             Positioned(
-              top: 110 + topInset,
+              top: 92 + topInset,
               left: 0,
               right: 0,
               bottom: 0,

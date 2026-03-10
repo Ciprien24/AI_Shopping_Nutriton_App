@@ -8,6 +8,8 @@ import 'package:smart_cart/features/carts/saved_lists_screen.dart';
 import 'package:smart_cart/features/preferences/preferences_screen.dart';
 import 'package:smart_cart/features/profile/user_profile_screen.dart';
 
+typedef _StoreEntry = ({String name, String asset});
+
 class CartsScreen extends StatelessWidget {
   const CartsScreen({super.key});
 
@@ -15,8 +17,15 @@ class CartsScreen extends StatelessWidget {
   static const Color _headerBlue = Color(0xFF1800AD);
   static const Color _accentOrange = Color(0xFFFF751F);
   static const Color _textDark = Color(0xFF141414);
+  static const Color _textMuted = Color(0xFF74788C);
 
-  static const List<({String name, String asset})> _stores = [
+  static const List<_StoreEntry> _favoriteStores = [
+    (name: 'Lidl', asset: 'lib/app/assets/lidl.png'),
+    (name: 'Kaufland', asset: 'lib/app/assets/kaufland.png'),
+  ];
+
+  // Keep this list as the app expands; favorites are rendered separately.
+  static const List<_StoreEntry> _supportedStores = [
     (name: 'Lidl', asset: 'lib/app/assets/lidl.png'),
     (name: 'Kaufland', asset: 'lib/app/assets/kaufland.png'),
   ];
@@ -24,6 +33,12 @@ class CartsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final topInset = MediaQuery.of(context).padding.top;
+    final favoriteStoreNames = _favoriteStores
+        .map((store) => store.name)
+        .toSet();
+    final otherStores = _supportedStores
+        .where((store) => !favoriteStoreNames.contains(store.name))
+        .toList(growable: false);
 
     return Scaffold(
       backgroundColor: _pageBackground,
@@ -34,7 +49,7 @@ class CartsScreen extends StatelessWidget {
             Container(color: _pageBackground),
             _buildHeader(topInset),
             Positioned(
-              top: 110 + topInset,
+              top: 92 + topInset,
               left: 0,
               right: 0,
               bottom: 0,
@@ -43,7 +58,7 @@ class CartsScreen extends StatelessWidget {
                   color: Colors.white,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(34)),
                 ),
-                child: Padding(
+                child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,10 +73,38 @@ class CartsScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 18),
+                      const Text(
+                        'Favorites',
+                        style: TextStyle(
+                          color: _textMuted,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.1,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
                       _SupermarketGroup(
-                        stores: _stores,
+                        stores: _favoriteStores,
                         onTapStore: (store) => _openStore(context, store),
                       ),
+                      const SizedBox(height: 18),
+                      const Text(
+                        'Other',
+                        style: TextStyle(
+                          color: _textMuted,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.1,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      if (otherStores.isEmpty)
+                        const _EmptySupermarketsCard()
+                      else
+                        _SupermarketGroup(
+                          stores: otherStores,
+                          onTapStore: (store) => _openStore(context, store),
+                        ),
                       const SizedBox(height: 14),
                       Align(
                         alignment: Alignment.center,
@@ -103,33 +146,69 @@ class CartsScreen extends StatelessWidget {
                   itemBuilder: (_) => const [
                     PopupMenuItem<String>(
                       value: 'profile',
-                      child: Text(
-                        'User page',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: _textDark,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.person_outline,
+                            size: 16,
+                            color: _textDark,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'User page',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: _textDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem<String>(
+                      value: 'support',
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.support_agent_outlined,
+                            size: 16,
+                            color: _textDark,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Support',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: _textDark,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     PopupMenuItem<String>(
                       value: 'sign_out',
-                      child: Text(
-                        'Log out',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: _textDark,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.logout, size: 16, color: _textDark),
+                          SizedBox(width: 8),
+                          Text(
+                            'Log out',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: _textDark,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                   child: const Center(
-                    child: Icon(
-                      CupertinoIcons.chevron_up,
-                      color: _textDark,
-                      size: 18,
-                    ),
+                    child: Icon(Icons.menu_rounded, color: _textDark, size: 18),
                   ),
                 ),
               ),
@@ -143,9 +222,7 @@ class CartsScreen extends StatelessWidget {
   void _openProfile(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => const UserProfileScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const UserProfileScreen()),
     );
   }
 
@@ -154,14 +231,21 @@ class CartsScreen extends StatelessWidget {
       _openProfile(context);
       return;
     }
+    if (value == 'support') {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Support will be available soon.')),
+      );
+      return;
+    }
     if (value == 'sign_out') {
       try {
         await supabase.auth.signOut();
       } on AuthException catch (error) {
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.message)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
       }
     }
   }
@@ -169,9 +253,7 @@ class CartsScreen extends StatelessWidget {
   void _openPreferences(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => const PreferencesScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const PreferencesScreen()),
     );
   }
 
@@ -184,11 +266,11 @@ class CartsScreen extends StatelessWidget {
 
   Widget _buildHeader(double topInset) {
     return Container(
-      height: 150 + topInset,
+      height: 128 + topInset,
       padding: EdgeInsets.fromLTRB(24, topInset + 2, 24, 0),
       decoration: const BoxDecoration(color: _headerBlue),
       child: Align(
-        alignment: const Alignment(0, -0.45),
+        alignment: const Alignment(0, -0.72),
         child: Row(
           children: [
             SizedBox(
@@ -219,7 +301,7 @@ class CartsScreen extends StatelessWidget {
 }
 
 class _SupermarketGroup extends StatelessWidget {
-  final List<({String name, String asset})> stores;
+  final List<_StoreEntry> stores;
   final ValueChanged<String> onTapStore;
 
   const _SupermarketGroup({required this.stores, required this.onTapStore});
@@ -251,6 +333,31 @@ class _SupermarketGroup extends StatelessWidget {
                 onTap: () => onTapStore(stores[i].name),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptySupermarketsCard extends StatelessWidget {
+  const _EmptySupermarketsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F8FB),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFE8EDF4)),
+      ),
+      child: const Text(
+        'More supermarkets will appear here as support is added.',
+        style: TextStyle(
+          color: CartsScreen._textMuted,
+          fontSize: 13,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );

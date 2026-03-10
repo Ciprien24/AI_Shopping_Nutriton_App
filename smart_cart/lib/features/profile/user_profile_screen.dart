@@ -93,11 +93,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   Widget _buildHeader(double topInset) {
     return Container(
-      height: 150 + topInset,
+      height: 128 + topInset,
       padding: EdgeInsets.fromLTRB(24, topInset + 2, 24, 0),
       decoration: const BoxDecoration(color: _headerBlue),
       child: const Align(
-        alignment: Alignment(0, -0.45),
+        alignment: Alignment(0, -0.72),
         child: Row(
           children: [
             SizedBox(
@@ -480,7 +480,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           Container(color: _pageBackground),
           _buildHeader(topInset),
           Positioned(
-            top: 110 + topInset,
+            top: 92 + topInset,
             left: 0,
             right: 0,
             bottom: 0,
